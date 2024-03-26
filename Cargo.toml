@@ -21,7 +21,6 @@ spin-app = { git = "https://github.com/fermyon/spin" }
 spin-core = { git = "https://github.com/fermyon/spin" }
 spin-trigger = { git = "https://github.com/fermyon/spin" }
 tokio = { version = "1.23", features = ["full"] }
-tokio-cron-scheduler = "0.9.4"
 tracing = { version = "0.1", features = ["log"] }
 tracing-subscriber = { version = "0.3.7", features = ["env-filter"] }
 wasmtime-wasi = { version = "18.0.1", features = ["tokio"] }

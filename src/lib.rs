@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use spin_app::AppComponent;
@@ -6,8 +6,8 @@ use spin_core::Engine;
 use spin_trigger::TriggerInstancePre;
 use spin_trigger::{cli::NoArgs, TriggerAppEngine, TriggerExecutor};
 
-pub(crate) type RuntimeData = ();
-pub(crate) type Store = spin_core::Store<RuntimeData>;
+type RuntimeData = ();
+type Store = spin_core::Store<RuntimeData>;
 
 pub struct CommandTrigger {
     engine: TriggerAppEngine<Self>,
@@ -74,16 +74,19 @@ impl TriggerInstancePre<RuntimeData, CommandTriggerConfig> for CommandInstancePr
         component: &AppComponent,
         _config: &CommandTriggerConfig,
     ) -> Result<CommandInstancePre> {
-        // Attempt to load as a component and fallback to loading a module
-        if let Ok(comp) = component.load_component(engine).await {
-            Ok(CommandInstancePre::Component(
-                engine.instantiate_pre(&comp)?,
-            ))
-        } else {
-            let module = component.load_module(engine).await?;
-            Ok(CommandInstancePre::Module(
-                engine.module_instantiate_pre(&module)?,
-            ))
+        // Attempt to load as a module and fallback to loading a component
+        match component.load_module(engine).await {
+            Ok(m) => Ok(CommandInstancePre::Module(
+                engine
+                    .module_instantiate_pre(&m)
+                    .context("Preview1 modules supports only preview1 imports")?,
+            )),
+            Err(module_load_err) => match component.load_component(engine).await {
+                Ok(c) => Ok(CommandInstancePre::Component(engine.instantiate_pre(&c)?)),
+                Err(component_load_err) => Err(anyhow!("{component_load_err}")
+                    .context(module_load_err)
+                    .context("failed to load component or module")),
+            },
         }
     }
 
@@ -121,15 +124,15 @@ impl CommandTrigger {
                     .engine
                     .prepare_instance_with_store(&component.id, store_builder)
                     .await?;
-                if let CommandInstance::Module(instance) = instance {
-                    let start = instance
-                        .get_func(&mut store, "_start")
-                        .context("Expected component to export _start function")?;
-
-                    let _ = start.call_async(&mut store, &[], &mut []).await?;
-                } else {
+                let CommandInstance::Module(instance) = instance else {
                     unreachable!();
-                }
+                };
+
+                let start = instance
+                    .get_func(&mut store, "_start")
+                    .context("Expected component to export _start function")?;
+
+                let _ = start.call_async(&mut store, &[], &mut []).await?;
             }
         }
 
