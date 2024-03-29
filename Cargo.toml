@@ -17,14 +17,13 @@ anyhow = "1.0.75"
 async-trait = "0.1"
 clap = { version = "3.1.15", features = ["derive", "env"] }
 serde = "1.0"
-spin-app = { git = "https://github.com/fermyon/spin", tag = "v2.3.1" }
-spin-core = { git = "https://github.com/fermyon/spin", tag = "v2.3.1" }
-spin-trigger = { git = "https://github.com/fermyon/spin", tag = "v2.3.1" }
+spin-app = { git = "https://github.com/fermyon/spin" }
+spin-core = { git = "https://github.com/fermyon/spin" }
+spin-trigger = { git = "https://github.com/fermyon/spin" }
 tokio = { version = "1.23", features = ["full"] }
-tokio-cron-scheduler = "0.9.4"
 tracing = { version = "0.1", features = ["log"] }
 tracing-subscriber = { version = "0.3.7", features = ["env-filter"] }
-wasmtime = { version = "18.0.1" }
+wasmtime-wasi = { version = "18.0.1", features = ["tokio"] }
 
 [workspace.dependencies]
 wit-bindgen = "0.16.0"
