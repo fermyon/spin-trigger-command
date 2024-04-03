@@ -34,7 +34,7 @@ jobs:
           rustup component add clippy
         
       - name: lint code
-        run: make lint
+        run: cargo fmt --all -- --check
         
       - name: Run Clippy
         run: cargo clippy --all -- -D warnings   

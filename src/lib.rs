@@ -132,7 +132,7 @@ impl CommandTrigger {
                     .get_func(&mut store, "_start")
                     .context("Expected component to export _start function")?;
 
-                let _ = start.call_async(&mut store, &[], &mut []).await?;
+                start.call_async(&mut store, &[], &mut []).await?;
             }
         }
 
