@@ -21,9 +21,11 @@ pub struct Component {
     pub id: String,
 }
 
-#[derive(Args)]
+#[derive(Args, Debug)]
+#[clap(trailing_var_arg(true))]
 pub struct CliArgs {
-    args: Vec<String>,
+    #[clap(multiple_values(true), allow_hyphen_values(true))]
+    guest_args: Vec<String>,
 }
 
 impl CliArgs {
@@ -35,7 +37,7 @@ impl CliArgs {
         // Insert the component id as the first argument as the command name
         let args = vec![component_id]
             .into_iter()
-            .chain(self.args.iter().map(|arg| &**arg))
+            .chain(self.guest_args.iter().map(|arg| &**arg))
             .collect::<Vec<&str>>();
 
         store_builder.args(args)?;
