@@ -25,7 +25,7 @@ pub struct Component {
 #[clap(trailing_var_arg(true))]
 pub struct CliArgs {
     #[clap(multiple_values(true), allow_hyphen_values(true))]
-    guest_args: Vec<String>,
+    pub guest_args: Vec<String>,
 }
 
 impl CliArgs {
