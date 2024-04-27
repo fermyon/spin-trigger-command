@@ -1,0 +1,15 @@
+spin_manifest_version = 2
+
+[application]
+authors = ["Mikkel Mørk Hegnhøj <mikkel@fermyon.com>"]
+description = "Just a command trigger"
+name = "command-trigger-hello-world"
+version = "0.1.0"
+
+[[trigger.command]]
+component = "hello-world"
+
+[component.hello-world]
+source = "target/wasm32-wasi/release/hello_world.wasm"
+build = ["cargo component build --target wasm32-wasi --release"]
+
