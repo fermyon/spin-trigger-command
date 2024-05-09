@@ -17,13 +17,13 @@ anyhow = "1.0.75"
 async-trait = "0.1"
 clap = { version = "3.1.15", features = ["derive", "env"] }
 serde = "1.0"
-spin-app = { git = "https://github.com/fermyon/spin", tag = "v2.4.3" }
-spin-core = { git = "https://github.com/fermyon/spin", tag = "v2.4.3" }
-spin-trigger = { git = "https://github.com/fermyon/spin", tag = "v2.4.3" }
+spin-app = { git = "https://github.com/fermyon/spin", tag = "v2.5.0" }
+spin-core = { git = "https://github.com/fermyon/spin", tag = "v2.5.0" }
+spin-trigger = { git = "https://github.com/fermyon/spin", tag = "v2.5.0" }
 tokio = { version = "1.23", features = ["full"] }
 tracing = { version = "0.1", features = ["log"] }
 tracing-subscriber = { version = "0.3.7", features = ["env-filter"] }
-wasmtime-wasi = { version = "18.0.1", features = ["tokio"] }
+wasmtime-wasi = { version = "18.0.4", features = ["tokio"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 # This needs to be an explicit dependency to enable
