@@ -3,7 +3,7 @@ name = "trigger-command"
 version = { workspace = true }
 authors = { workspace = true }
 edition = { workspace = true }
-rust-version = "1.73"
+rust-version = "1.76"
 
 [workspace.package]
 version = "0.1.0"
