@@ -1,6 +1,6 @@
 # Async Sample
 
-This example illustrates how you can run asyncoperations within your WebAssembly module leveraging the `run` function provided by the `spin-executor` crate.
+This example illustrates how you can run async operations within your WebAssembly module leveraging the `run` function provided by the `spin-executor` crate.
 
 The sample app wraps async code (an outbound HTTP request) as shown below:
 
