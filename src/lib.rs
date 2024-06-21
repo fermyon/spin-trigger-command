@@ -6,6 +6,7 @@ use spin_app::AppComponent;
 use spin_core::Engine;
 use spin_trigger::TriggerInstancePre;
 use spin_trigger::{TriggerAppEngine, TriggerExecutor};
+use wasmtime_wasi::bindings::Command;
 
 type RuntimeData = ();
 type Store = spin_core::Store<RuntimeData>;
@@ -139,7 +140,7 @@ impl CommandTrigger {
             .await?;
         match instance {
             CommandInstance::Component(instance) => {
-                let handler = wasmtime_wasi::preview2::command::Command::new(&mut store, &instance)
+                let handler = Command::new(&mut store, &instance)
                     .context("Wasi preview 2 components need to target the wasi:cli world")?;
                 let _ = handler.wasi_cli_run().call_run(store).await?;
             }
