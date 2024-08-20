@@ -42,6 +42,7 @@ impl CliArgs {
             .collect::<Vec<&str>>();
 
         store_builder.args(args)?;
+        store_builder.inherit_stdin();
 
         Ok(())
     }
