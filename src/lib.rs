@@ -38,13 +38,25 @@ impl Trigger for CommandTrigger {
     type InstanceState = ();
 
     fn new(cli_args: Self::CliArgs, app: &spin_trigger::App) -> anyhow::Result<Self> {
-        let components = app
+        let components: Vec<Component> = app
             .trigger_configs::<CommandTriggerConfig>(Self::TYPE)?
             .into_iter()
             .map(|(_, config)| Component {
                 id: config.component.clone(),
             })
             .collect();
+
+        if components.len() > 1 {
+            tracing::warn!(
+                "Multiple components found for command trigger, only the first one will be used"
+            );
+        }
+
+        if components.is_empty() {
+            return Err(anyhow::anyhow!(
+                "No components found for command trigger, exiting"
+            ));
+        }
 
         Ok(Self {
             components,
@@ -56,8 +68,8 @@ impl Trigger for CommandTrigger {
         Self::handle(
             self.components
                 .first()
-                .map(|component| component.to_owned())
-                .context("Failed to get the component for the command trigger")?,
+                .context("Failed to get the component for the command trigger")?
+                .to_owned(),
             trigger_app.into(),
             self.config.clone(),
         )
@@ -76,7 +88,7 @@ impl CommandTrigger {
 
         let args = vec![&component.id]
             .into_iter()
-            .chain(args.guest_args.iter().map(|arg| arg));
+            .chain(args.guest_args.iter());
         t.args(args);
 
         let (instance, mut store) = instance_builder.instantiate(()).await?;
