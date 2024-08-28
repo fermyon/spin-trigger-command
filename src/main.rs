@@ -1,8 +1,8 @@
 use clap::Parser;
-use spin_trigger::cli::TriggerExecutorCommand;
+use spin_trigger::cli::FactorsTriggerCommand;
 use trigger_command::CommandTrigger;
 
-type Command = TriggerExecutorCommand<CommandTrigger>;
+type Command = FactorsTriggerCommand<CommandTrigger>;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
