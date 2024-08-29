@@ -1,19 +1,14 @@
-use anyhow::{anyhow, Context, Result};
-use async_trait::async_trait;
+use std::sync::Arc;
+
+use anyhow::{Context, Result};
 use clap::Args;
 use serde::{Deserialize, Serialize};
-use spin_app::AppComponent;
-use spin_core::Engine;
-use spin_trigger::TriggerInstancePre;
-use spin_trigger::{TriggerAppEngine, TriggerExecutor};
-use wasmtime_wasi::bindings::Command;
+use spin_trigger::{Trigger, TriggerApp};
 
-type RuntimeData = ();
-type Store = spin_core::Store<RuntimeData>;
-
+#[derive(Clone)]
 pub struct CommandTrigger {
-    engine: TriggerAppEngine<Self>,
     components: Vec<Component>,
+    config: CliArgs,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
@@ -22,29 +17,11 @@ pub struct Component {
     pub id: String,
 }
 
-#[derive(Args, Debug)]
+#[derive(Args, Debug, Clone)]
 #[clap(trailing_var_arg(true))]
 pub struct CliArgs {
     #[clap(multiple_values(true), allow_hyphen_values(true))]
     pub guest_args: Vec<String>,
-}
-
-impl CliArgs {
-    fn apply_args_to_store(
-        &self,
-        component_id: &str,
-        store_builder: &mut spin_core::StoreBuilder,
-    ) -> Result<()> {
-        // Insert the component id as the first argument as the command name
-        let args = vec![component_id]
-            .into_iter()
-            .chain(self.guest_args.iter().map(|arg| &**arg))
-            .collect::<Vec<&str>>();
-
-        store_builder.args(args)?;
-
-        Ok(())
-    }
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
@@ -53,121 +30,77 @@ pub struct CommandTriggerConfig {
     pub component: String,
 }
 
-pub enum CommandInstancePre {
-    Component(spin_core::InstancePre<RuntimeData>),
-    Module(spin_core::ModuleInstancePre<RuntimeData>),
-}
+impl Trigger for CommandTrigger {
+    const TYPE: &'static str = "command";
 
-pub enum CommandInstance {
-    Component(spin_core::Instance),
-    Module(spin_core::ModuleInstance),
-}
+    type CliArgs = CliArgs;
 
-#[async_trait]
-impl TriggerExecutor for CommandTrigger {
-    const TRIGGER_TYPE: &'static str = "command";
-    type RuntimeData = RuntimeData;
-    type TriggerConfig = CommandTriggerConfig;
-    type RunConfig = CliArgs;
-    type InstancePre = CommandInstancePre;
+    type InstanceState = ();
 
-    async fn new(engine: TriggerAppEngine<Self>) -> Result<Self> {
-        let components = engine
-            .trigger_configs()
+    fn new(cli_args: Self::CliArgs, app: &spin_trigger::App) -> anyhow::Result<Self> {
+        let components: Vec<Component> = app
+            .trigger_configs::<CommandTriggerConfig>(Self::TYPE)?
+            .into_iter()
             .map(|(_, config)| Component {
                 id: config.component.clone(),
             })
             .collect();
-        Ok(Self { engine, components })
-    }
 
-    async fn run(self, config: Self::RunConfig) -> Result<()> {
-        self.handle(config).await
-    }
-}
-
-#[async_trait]
-impl TriggerInstancePre<RuntimeData, CommandTriggerConfig> for CommandInstancePre {
-    type Instance = CommandInstance;
-
-    async fn instantiate_pre(
-        engine: &Engine<RuntimeData>,
-        component: &AppComponent,
-        _config: &CommandTriggerConfig,
-    ) -> Result<CommandInstancePre> {
-        // Attempt to load as a module and fallback to loading a component
-        match component.load_module(engine).await {
-            Ok(m) => Ok(CommandInstancePre::Module(
-                engine
-                    .module_instantiate_pre(&m)
-                    .context("Preview1 modules supports only preview1 imports")?,
-            )),
-            Err(module_load_err) => match component.load_component(engine).await {
-                Ok(c) => Ok(CommandInstancePre::Component(engine.instantiate_pre(&c)?)),
-                Err(component_load_err) => Err(anyhow!("{component_load_err}")
-                    .context(module_load_err)
-                    .context("failed to load component or module")),
-            },
+        if components.len() > 1 {
+            tracing::warn!(
+                "Multiple components found for command trigger, only the first one will be used"
+            );
         }
+
+        if components.is_empty() {
+            return Err(anyhow::anyhow!(
+                "No components found for command trigger, exiting"
+            ));
+        }
+
+        Ok(Self {
+            components,
+            config: cli_args,
+        })
     }
 
-    async fn instantiate(&self, store: &mut Store) -> Result<CommandInstance> {
-        match self {
-            CommandInstancePre::Component(pre) => pre
-                .instantiate_async(store)
-                .await
-                .map(CommandInstance::Component),
-            CommandInstancePre::Module(pre) => pre
-                .instantiate_async(store)
-                .await
-                .map(CommandInstance::Module),
-        }
+    async fn run(self, trigger_app: spin_trigger::TriggerApp<Self>) -> anyhow::Result<()> {
+        Self::handle(
+            self.components
+                .first()
+                .context("Failed to get the component for the command trigger")?
+                .to_owned(),
+            trigger_app.into(),
+            self.config.clone(),
+        )
+        .await
     }
 }
 
 impl CommandTrigger {
-    pub async fn handle(&self, args: CliArgs) -> Result<()> {
-        let component = &self.components[0];
-        let mut store_builder = self
-            .engine
-            .store_builder(&component.id, spin_core::WasiVersion::Preview2)?;
+    pub async fn handle(
+        component: Component,
+        trigger_app: Arc<TriggerApp<Self>>,
+        args: CliArgs,
+    ) -> Result<()> {
+        let mut instance_builder = trigger_app.prepare(&component.id)?;
+        let t = instance_builder.factor_builders().wasi();
 
-        args.apply_args_to_store(&component.id, &mut store_builder)?;
+        let args = std::iter::once(component.id).chain(args.guest_args);
+        t.args(args);
 
-        let (instance, mut store) = self
-            .engine
-            .prepare_instance_with_store(&component.id, store_builder)
-            .await?;
-        match instance {
-            CommandInstance::Component(instance) => {
-                let handler = Command::new(&mut store, &instance)
-                    .context("Wasi preview 2 components need to target the wasi:cli world")?;
-                let _ = handler.wasi_cli_run().call_run(store).await?;
-            }
-            CommandInstance::Module(_) => {
-                // Toss the commandInstance we have and create a new one as the
-                // associated store will be a preview2 store
-                let mut store_builder = self
-                    .engine
-                    .store_builder(&component.id, spin_core::WasiVersion::Preview1)?;
+        let (instance, mut store) = instance_builder.instantiate(()).await?;
 
-                args.apply_args_to_store(&component.id, &mut store_builder)?;
-
-                let (instance, mut store) = self
-                    .engine
-                    .prepare_instance_with_store(&component.id, store_builder)
-                    .await?;
-                let CommandInstance::Module(instance) = instance else {
-                    unreachable!();
-                };
-
-                let start = instance
-                    .get_func(&mut store, "_start")
-                    .context("Expected component to export _start function")?;
-
-                start.call_async(&mut store, &[], &mut []).await?;
-            }
-        }
+        let func = {
+            let mut exports = instance.exports(&mut store);
+            exports
+                .root()
+                .instance("wasi:cli/run@0.2.0")
+                .context("failed to find the wasi:cli/run@0.2.0 instance in component")?
+                .typed_func::<(), (Result<(), ()>,)>("run")
+                .context("failed to find the \"run\" function in wasi:cli/run@0.2.0 instance")?
+        };
+        let _ = func.call_async(&mut store, ()).await?;
 
         Ok(())
     }
