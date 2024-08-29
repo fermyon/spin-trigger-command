@@ -86,9 +86,7 @@ impl CommandTrigger {
         let mut instance_builder = trigger_app.prepare(&component.id)?;
         let t = instance_builder.factor_builders().wasi();
 
-        let args = vec![&component.id]
-            .into_iter()
-            .chain(args.guest_args.iter());
+        let args = std::iter::once(component.id).chain(args.guest_args);
         t.args(args);
 
         let (instance, mut store) = instance_builder.instantiate(()).await?;
