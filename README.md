@@ -30,5 +30,5 @@ Alternatively, use the `spin pluginify` plugin to install from a fresh build. Th
 ```sh
 spin plugins install pluginify
 cargo build --release
-spin pluginify install
+spin pluginify --install
 ```
