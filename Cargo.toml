@@ -16,12 +16,12 @@ edition = "2021"
 anyhow = "1.0"
 clap = { version = "3.1.15", features = ["derive", "env"] }
 serde = "1.0"
-spin-trigger = { git = "https://github.com/fermyon/spin", rev = "4fbf872505976ded774005f602584c2feefbfd8b" }
-spin-core = { git = "https://github.com/fermyon/spin", rev = "4fbf872505976ded774005f602584c2feefbfd8b" }
-spin-telemetry = { git = "https://github.com/fermyon/spin", rev = "4fbf872505976ded774005f602584c2feefbfd8b" }
-spin-factors = { git = "https://github.com/fermyon/spin", rev = "4fbf872505976ded774005f602584c2feefbfd8b" }
-spin-factor-wasi = { git = "https://github.com/fermyon/spin", rev = "4fbf872505976ded774005f602584c2feefbfd8b" }
-spin-runtime-factors = { git = "https://github.com/fermyon/spin", rev = "4fbf872505976ded774005f602584c2feefbfd8b" }
+spin-trigger = { git = "https://github.com/fermyon/spin", rev = "485b04090644ecfda4d0034891a5feca9a90332c" }
+spin-core = { git = "https://github.com/fermyon/spin", rev = "485b04090644ecfda4d0034891a5feca9a90332c" }
+spin-telemetry = { git = "https://github.com/fermyon/spin", rev = "485b04090644ecfda4d0034891a5feca9a90332c" }
+spin-factors = { git = "https://github.com/fermyon/spin", rev = "485b04090644ecfda4d0034891a5feca9a90332c" }
+spin-factor-wasi = { git = "https://github.com/fermyon/spin", rev = "485b04090644ecfda4d0034891a5feca9a90332c" }
+spin-runtime-factors = { git = "https://github.com/fermyon/spin", rev = "485b04090644ecfda4d0034891a5feca9a90332c" }
 tokio = { version = "1.40", features = ["rt", "macros"] }
 tracing = { version = "0.1", features = ["log"] }
 wasmtime-wasi = "22.0.0"
