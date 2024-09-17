@@ -3,6 +3,8 @@ use std::sync::Arc;
 use anyhow::{Context, Result};
 use clap::Args;
 use serde::{Deserialize, Serialize};
+use spin_factor_wasi::WasiFactor;
+use spin_factors::RuntimeFactors;
 use spin_trigger::{Trigger, TriggerApp};
 
 #[derive(Clone)]
@@ -30,7 +32,7 @@ pub struct CommandTriggerConfig {
     pub component: String,
 }
 
-impl Trigger for CommandTrigger {
+impl<F: RuntimeFactors> Trigger<F> for CommandTrigger {
     const TYPE: &'static str = "command";
 
     type CliArgs = CliArgs;
@@ -39,7 +41,7 @@ impl Trigger for CommandTrigger {
 
     fn new(cli_args: Self::CliArgs, app: &spin_trigger::App) -> anyhow::Result<Self> {
         let components: Vec<Component> = app
-            .trigger_configs::<CommandTriggerConfig>(Self::TYPE)?
+            .trigger_configs::<CommandTriggerConfig>(<Self as Trigger<F>>::TYPE)?
             .into_iter()
             .map(|(_, config)| Component {
                 id: config.component.clone(),
@@ -64,7 +66,7 @@ impl Trigger for CommandTrigger {
         })
     }
 
-    async fn run(self, trigger_app: spin_trigger::TriggerApp<Self>) -> anyhow::Result<()> {
+    async fn run(self, trigger_app: spin_trigger::TriggerApp<Self, F>) -> anyhow::Result<()> {
         Self::handle(
             self.components
                 .first()
@@ -78,16 +80,16 @@ impl Trigger for CommandTrigger {
 }
 
 impl CommandTrigger {
-    pub async fn handle(
+    pub async fn handle<F: RuntimeFactors>(
         component: Component,
-        trigger_app: Arc<TriggerApp<Self>>,
+        trigger_app: Arc<TriggerApp<Self, F>>,
         args: CliArgs,
     ) -> Result<()> {
         let mut instance_builder = trigger_app.prepare(&component.id)?;
-        let t = instance_builder.factor_builders().wasi();
-
-        let args = std::iter::once(component.id).chain(args.guest_args);
-        t.args(args);
+        if let Some(wasi) = instance_builder.factor_builder::<WasiFactor>() {
+            let args = std::iter::once(component.id).chain(args.guest_args);
+            wasi.args(args);
+        }
 
         let (instance, mut store) = instance_builder.instantiate(()).await?;
 
