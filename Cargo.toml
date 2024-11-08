@@ -6,7 +6,7 @@ edition = { workspace = true }
 rust-version = "1.76"
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Radu Matei <radu@fermyon.com>"]
 edition = "2021"
 
