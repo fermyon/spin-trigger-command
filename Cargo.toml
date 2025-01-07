@@ -3,7 +3,7 @@ name = "trigger-command"
 version = { workspace = true }
 authors = { workspace = true }
 edition = { workspace = true }
-rust-version = "1.76"
+rust-version = "1.81"
 
 [workspace.package]
 version = "0.2.0"
@@ -16,20 +16,17 @@ edition = "2021"
 anyhow = "1.0"
 clap = { version = "3.1.15", features = ["derive", "env"] }
 serde = "1.0"
-spin-trigger = { git = "https://github.com/fermyon/spin", tag = "v3.0.0" }
-spin-core = { git = "https://github.com/fermyon/spin", tag = "v3.0.0" }
-spin-telemetry = { git = "https://github.com/fermyon/spin", tag = "v3.0.0" }
-spin-factors = { git = "https://github.com/fermyon/spin", tag = "v3.0.0" }
-spin-factor-wasi = { git = "https://github.com/fermyon/spin", tag = "v3.0.0" }
-spin-runtime-factors = { git = "https://github.com/fermyon/spin", tag = "v3.0.0" }
+spin-trigger = { git = "https://github.com/fermyon/spin", tag = "v3.1.1" }
+spin-core = { git = "https://github.com/fermyon/spin", tag = "v3.1.1" }
+spin-telemetry = { git = "https://github.com/fermyon/spin", tag = "v3.1.1" }
+spin-factors = { git = "https://github.com/fermyon/spin", tag = "v3.1.1" }
+spin-factor-wasi = { git = "https://github.com/fermyon/spin", tag = "v3.1.1" }
+spin-runtime-factors = { git = "https://github.com/fermyon/spin", tag = "v3.1.1" }
 tokio = { version = "1.38", features = ["rt", "macros"] }
 tracing = { version = "0.1", features = ["log"] }
-wasmtime-wasi = "25.0.3"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 # This needs to be an explicit dependency to enable
 # '--features openssl/vendored', which is used for Linux releases.
 openssl = { version = "0.10" }
 
-[workspace.dependencies]
-wit-bindgen = "0.16.0"
